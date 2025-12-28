@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo to SVG Converter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+    </button>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="header-icon">✨</div>
+                <div>
+                    <h1>Photo to SVG Converter</h1>
+                    <p>Transform your photos into scalable vector graphics</p>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                    <div class="upload-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p class="upload-text">Click to upload or drag and drop</p>
+                        <p class="upload-hint">PNG, JPG, JPEG up to 10MB</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-section" id="controlsSection" style="display: none;">
+                <h2>Conversion Settings</h2>
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <label for="colorCount">Color Count</label>
+                        <input type="range" id="colorCount" min="2" max="256" value="16">
+                        <span class="value-display" id="colorCountValue">16</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="smoothness">Smoothness</label>
+                        <input type="range" id="smoothness" min="0" max="10" value="1" step="0.1">
+                        <span class="value-display" id="smoothnessValue">1.0</span>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button id="convertBtn" class="btn btn-primary">Convert to SVG</button>
+                    <button id="resetBtn" class="btn btn-secondary">Reset</button>
+                </div>
+            </div>
+
+            <div class="preview-section" id="previewSection" style="display: none;">
+                <div class="preview-container">
+                    <div class="preview-box">
+                        <h3>Original Image</h3>
+                        <img id="originalImage" alt="Original">
+                    </div>
+                    <div class="preview-box">
+                        <h3>SVG Preview</h3>
+                        <div id="svgPreview"></div>
+                    </div>
+                </div>
+                <div class="download-section">
+                    <button id="downloadBtn" class="btn btn-success">Download SVG</button>
+                    <div class="file-info">
+                        <span id="fileInfo"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Converting image...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="imagetracer.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+
