@@ -8,33 +8,41 @@
 
 ### 1.1 Problem Statement
 
-Prediction markets like Polymarket operate fully on-chain, making all positions, trades, and strategies publicly observable. This creates several issues:
+Prediction markets like Polymarket and Kalshi operate with transparent order books and on-chain/public settlement, making all positions, trades, and strategies observable. This creates several issues:
 
 * Traders expose their positions to competitors
 * Whales reveal market-moving intent
 * Funds and identities can be trivially linked across trades
+* Strategy alpha is leaked through position visibility
 
-While transparency is core to blockchains, **linkability** is not strictly required for market integrity.
+While transparency is core to market integrity, **linkability** between a trader's identity and their positions is not strictly required.
 
 ### 1.2 Solution
 
-**Hedgeveil** is a privacy-preserving trading relay that prevents on-chain observers from linking a user’s wallet to their Polymarket positions.
+**Hedgeveil** is a privacy-preserving trading relay that prevents observers from linking a user's wallet to their prediction market positions across platforms like Polymarket, Kalshi, and other prediction markets.
 
-Hedgeveil does **not** hide markets or outcomes. Instead, it breaks the on-chain linkage between:
+Hedgeveil does **not** hide markets or outcomes. Instead, it breaks the linkage between:
 
 * User wallet ↔ execution address
 * Execution address ↔ withdrawal address
 
-This is achieved through a Solana-based privacy layer and cross-chain private routing to Polygon.
+This is achieved through a Solana-based privacy layer and cross-chain private routing to destination markets.
 
-### 1.3 Non-Goals (Explicit)
+### 1.3 Supported Markets
+
+* **Polymarket** (Polygon) – Crypto-native prediction market
+* **Kalshi** (Centralized) – CFTC-regulated prediction exchange
+* Additional markets planned for future integration
+
+### 1.4 Non-Goals (Explicit)
 
 To avoid overclaiming, Hedgeveil does **not**:
 
-* Hide the existence of trades or positions on Polymarket
-* Modify or fork Polymarket smart contracts
+* Hide the existence of trades or positions on prediction markets
+* Modify or fork any prediction market's smart contracts
 * Guarantee anonymity against global adversaries
 * Provide regulatory evasion
+* Bypass KYC requirements on regulated platforms (e.g., Kalshi)
 
 ---
 
@@ -42,13 +50,13 @@ To avoid overclaiming, Hedgeveil does **not**:
 
 ### Primary Users
 
-* Active Polymarket traders
+* Active prediction market traders (Polymarket, Kalshi, etc.)
 * High-volume or strategy-sensitive traders
 * DAO treasuries or funds experimenting with prediction markets
 
 ### Secondary Users
 
-* Researchers
+* Researchers studying prediction markets
 * Privacy-focused DeFi users
 * Hackathon judges / developers
 
@@ -65,13 +73,13 @@ To avoid overclaiming, Hedgeveil does **not**:
 
 ### 3.2 Trade Execution (Veiled)
 
-1. User selects a Polymarket market and position
-2. User signs an off-chain trade intent
-3. Hedgeveil relayer:
-
+1. User selects a prediction market (e.g., Polymarket, Kalshi)
+2. User selects a market and position
+3. User signs an off-chain trade intent
+4. Hedgeveil relayer:
    * Routes funds privately via **SilentSwap**
-   * Uses a fresh Polygon execution address
-4. Trade is executed on Polymarket
+   * Uses a fresh execution address
+5. Trade is executed on the selected prediction market
 
 ### 3.3 Position Holding
 
@@ -98,26 +106,27 @@ To avoid overclaiming, Hedgeveil does **not**:
 ### 4.2 Relayer Service
 
 * Accept signed trade intents
-* Manage burner wallets
-* Execute trades on Polygon
+* Manage burner wallets per market
+* Execute trades on supported prediction markets
 * Track positions internally
 
 ### 4.3 Cross-Chain Privacy
 
-* Solana ↔ Polygon routing via SilentSwap
+* Solana ↔ Polygon routing via SilentSwap (for Polymarket)
+* Solana ↔ Fiat rails (for Kalshi, future)
 * No direct wallet linkage
 * No pooled custody
 
 ### 4.4 Frontend
 
 * Wallet connection (Solana)
+* Market browser with multi-platform support
 * Shield / trade / withdraw flows
 * Clear privacy disclosures
 
 ### 4.5 Observability (Infra)
 
 * Use **Helius RPCs** for:
-
   * Vault state monitoring
   * Relayer execution confirmation
 
@@ -130,12 +139,14 @@ To avoid overclaiming, Hedgeveil does **not**:
 * Blockchain observers
 * Portfolio tracking tools
 * Strategy inference via address clustering
+* Cross-platform position correlation
 
 ### Threat Model Not Covered
 
 * Relayer compromise
 * Global timing analysis
 * Off-chain surveillance
+* Platform-level KYC data (for regulated markets)
 
 ---
 
@@ -151,16 +162,18 @@ To avoid overclaiming, Hedgeveil does **not**:
 * Relayer (Node.js / Rust)
 * Trade intent signing
 * Position tracking
+* Market adapters (Polymarket, Kalshi, etc.)
 
 ### Cross-Chain
 
 * SilentSwap routing
-* Polygon execution wallets
+* Market-specific execution wallets
 
 ### Frontend
 
-* **Vite-based frontend** (React or Svelte)
+* **Vite-based frontend** (React)
 * Solana Wallet Adapter
+* Multi-market UI
 
 ---
 
@@ -169,6 +182,7 @@ To avoid overclaiming, Hedgeveil does **not**:
 * Optional pre-screening via **Range**
 * Selective disclosure support
 * No direct custody of user identity
+* Respects platform-specific compliance requirements
 
 ---
 
@@ -177,12 +191,13 @@ To avoid overclaiming, Hedgeveil does **not**:
 ### Included
 
 * Deposit → trade → withdraw demo
-* One Polymarket market
-* One supported asset
+* Demo prediction markets (simulated)
+* One supported asset (USDC)
 * Manual relayer control
 
 ### Excluded
 
+* Live Polymarket/Kalshi integration
 * Automated market discovery
 * Advanced ZK proofs
 * Multi-market portfolios
@@ -201,6 +216,7 @@ To avoid overclaiming, Hedgeveil does **not**:
 
 * Clear user understanding of privacy guarantees
 * Judges understand what is hidden vs visible
+* Platform-agnostic architecture demonstrated
 
 ### Demo
 
@@ -216,6 +232,7 @@ To avoid overclaiming, Hedgeveil does **not**:
 | Overclaiming privacy | Explicit non-goals section          |
 | Relayer trust        | Burner wallets + scoped permissions |
 | Cross-chain failure  | Mocked or testnet demo              |
+| Regulatory concerns  | Clear compliance disclaimers        |
 
 ---
 
@@ -224,10 +241,12 @@ To avoid overclaiming, Hedgeveil does **not**:
 * ZK ownership proofs (Aztec / Noir)
 * Non-custodial relayer network
 * DAO-managed relayers
-* Support additional prediction markets
+* Live Polymarket integration
+* Kalshi integration via regulated channels
+* Support additional prediction markets (Augur, Gnosis, etc.)
 
 ---
 
 ## 12. One-Sentence Pitch
 
-> **Hedgeveil** is a privacy relay that lets users trade on Polymarket without revealing their positions to on-chain observers.
+> **Hedgeveil** is a privacy relay that lets users trade on prediction markets like Polymarket and Kalshi without revealing their positions to observers.

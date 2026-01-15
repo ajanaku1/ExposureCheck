@@ -39,7 +39,7 @@ function TradeFlow({ shieldedBalance, onTrade }) {
     setTxStatus({ step: 3, message: 'Executing on Polygon via fresh address...' })
 
     await new Promise(r => setTimeout(r, 1200))
-    setTxStatus({ step: 4, message: 'Trade confirmed on Polymarket!' })
+    setTxStatus({ step: 4, message: 'Trade confirmed!' })
 
     const success = onTrade({
       market: DEMO_MARKET.title,
@@ -66,7 +66,7 @@ function TradeFlow({ shieldedBalance, onTrade }) {
     <div className="flow-panel">
       <h3>Execute Veiled Trade</h3>
       <p className="description">
-        Trade on Polymarket without linking your wallet.
+        Trade on prediction markets without linking your wallet.
         Your position will be held by a relayer-controlled address.
       </p>
 
@@ -178,7 +178,7 @@ function TradeFlow({ shieldedBalance, onTrade }) {
         </div>
         <p className="notice-text">
           <strong>Hidden:</strong> Link between your Solana wallet and the Polygon execution address.<br/>
-          <strong>Visible:</strong> The trade itself on Polymarket (position, amount, market).
+          <strong>Visible:</strong> The trade itself on the market (position, amount, market).
           <br/><br/>
           Observers can see that *someone* took this position, but cannot determine it was you.
         </p>

@@ -1,23 +1,88 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import {
   ConnectionProvider,
   WalletProvider,
   useWallet,
 } from '@solana/wallet-adapter-react'
 import {
-  WalletModalProvider,
-  WalletMultiButton,
-} from '@solana/wallet-adapter-react-ui'
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets'
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+} from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
-
-import '@solana/wallet-adapter-react-ui/styles.css'
 
 import ShieldFlow from './components/ShieldFlow'
 import TradeFlow from './components/TradeFlow'
 import WithdrawFlow from './components/WithdrawFlow'
+import MarketsList from './components/MarketsList'
+import WalletModal from './components/WalletModal'
 
-function Dashboard() {
+function ConnectButton({ onClick }) {
+  const { publicKey, disconnect, connecting } = useWallet()
+
+  if (publicKey) {
+    return (
+      <button className="btn-wallet connected" onClick={disconnect}>
+        <span className="wallet-dot" />
+        {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+      </button>
+    )
+  }
+
+  return (
+    <button className="btn-wallet" onClick={onClick} disabled={connecting}>
+      {connecting ? 'Connecting...' : 'Connect Wallet'}
+    </button>
+  )
+}
+
+function HeroSection({ onConnectWallet }) {
+  return (
+    <div className="hero-section">
+      <div className="hero-content">
+        <div className="hero-badge">Privacy-First Trading</div>
+        <h1 className="hero-title">
+          Trade Prediction Markets.<br />
+          <span className="hero-highlight">Stay Private.</span>
+        </h1>
+        <p className="hero-description">
+          HedgeVeil breaks the on-chain link between your wallet and your positions.
+          Observers can see trades happen, but can't trace them back to you.
+        </p>
+        <div className="hero-actions">
+          <button className="btn btn-primary btn-large" onClick={onConnectWallet}>
+            Start Trading Privately
+          </button>
+          <a href="#how-it-works" className="btn btn-secondary btn-large">
+            How It Works
+          </a>
+        </div>
+      </div>
+      <div className="hero-visual">
+        <div className="privacy-diagram">
+          <div className="diagram-node source">
+            <span>Your Wallet</span>
+          </div>
+          <div className="diagram-arrow">
+            <div className="arrow-line" />
+            <span className="arrow-label">Shielded</span>
+          </div>
+          <div className="diagram-node vault">
+            <span>HedgeVeil</span>
+          </div>
+          <div className="diagram-arrow">
+            <div className="arrow-line" />
+            <span className="arrow-label">Unlinkable</span>
+          </div>
+          <div className="diagram-node dest">
+            <span>Markets</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Dashboard({ onDisconnect }) {
   const { publicKey } = useWallet()
   const [activeTab, setActiveTab] = useState('shield')
 
@@ -51,27 +116,12 @@ function Dashboard() {
     if (amount <= shieldedBalance) {
       setShieldedBalance(prev => prev - amount)
       setPendingWithdrawals(prev => prev + amount)
-      // Simulate withdrawal completion
       setTimeout(() => {
         setPendingWithdrawals(prev => prev - amount)
       }, 3000)
       return true
     }
     return false
-  }
-
-  if (!publicKey) {
-    return (
-      <div className="connect-prompt">
-        <div className="logo-icon" style={{ width: 64, height: 64, fontSize: '1.5rem' }}>H</div>
-        <h2>Welcome to HedgeVeil</h2>
-        <p>
-          Trade on Polymarket privately. Connect your Solana wallet to shield your
-          positions from on-chain observers.
-        </p>
-        <WalletMultiButton />
-      </div>
-    )
   }
 
   return (
@@ -163,44 +213,96 @@ function Dashboard() {
   )
 }
 
+function MainContent() {
+  const { publicKey } = useWallet()
+  const [showWalletModal, setShowWalletModal] = useState(false)
+
+  const openWalletModal = useCallback(() => setShowWalletModal(true), [])
+  const closeWalletModal = useCallback(() => setShowWalletModal(false), [])
+
+  if (publicKey) {
+    return <Dashboard />
+  }
+
+  return (
+    <>
+      <HeroSection onConnectWallet={openWalletModal} />
+      <MarketsList onConnectWallet={openWalletModal} />
+      <WalletModal isOpen={showWalletModal} onClose={closeWalletModal} />
+    </>
+  )
+}
+
 function App() {
   const network = 'devnet'
   const endpoint = useMemo(() => clusterApiUrl(network), [network])
-  const wallets = useMemo(() => [new PhantomWalletAdapter()], [])
+  const wallets = useMemo(() => [
+    new PhantomWalletAdapter(),
+    new SolflareWalletAdapter(),
+  ], [])
+
+  const [showWalletModal, setShowWalletModal] = useState(false)
 
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
-          <div className="app">
-            <header className="header">
-              <div className="logo">
-                <div className="logo-icon">H</div>
-                <h1>HedgeVeil</h1>
-              </div>
-              <WalletMultiButton />
-            </header>
-
-            <main className="main-content">
-              <Dashboard />
-            </main>
-
-            <footer className="footer">
-              <div className="footer-links">
-                <a href="#privacy">Privacy Model</a>
-                <a href="#docs">Documentation</a>
-                <a href="#github">GitHub</a>
-              </div>
-              <p className="footer-disclaimer">
-                HedgeVeil breaks on-chain linkage between your wallet and Polymarket positions.
-                It does not hide trades or provide regulatory evasion.
-                See our privacy model for what is and isn't protected.
-              </p>
-            </footer>
-          </div>
-        </WalletModalProvider>
+        <AppContent
+          showWalletModal={showWalletModal}
+          setShowWalletModal={setShowWalletModal}
+        />
       </WalletProvider>
     </ConnectionProvider>
+  )
+}
+
+function AppContent({ showWalletModal, setShowWalletModal }) {
+  const { publicKey } = useWallet()
+  const [localShowModal, setLocalShowModal] = useState(false)
+
+  const openWalletModal = useCallback(() => setLocalShowModal(true), [])
+  const closeWalletModal = useCallback(() => setLocalShowModal(false), [])
+
+  return (
+    <div className="app">
+      <header className="header">
+        <div className="logo">
+          <div className="logo-icon">H</div>
+          <h1>HedgeVeil</h1>
+        </div>
+        <nav className="header-nav">
+          <a href="#markets" className="nav-link">Markets</a>
+          <a href="#how-it-works" className="nav-link">How It Works</a>
+          <a href="#docs" className="nav-link">Docs</a>
+        </nav>
+        <ConnectButton onClick={openWalletModal} />
+      </header>
+
+      <main className="main-content">
+        {publicKey ? (
+          <Dashboard />
+        ) : (
+          <>
+            <HeroSection onConnectWallet={openWalletModal} />
+            <MarketsList onConnectWallet={openWalletModal} />
+          </>
+        )}
+      </main>
+
+      <footer className="footer">
+        <div className="footer-links">
+          <a href="#privacy">Privacy Model</a>
+          <a href="#docs">Documentation</a>
+          <a href="#github">GitHub</a>
+        </div>
+        <p className="footer-disclaimer">
+          HedgeVeil breaks on-chain linkage between your wallet and prediction market positions.
+          It does not hide trades or provide regulatory evasion.
+          See our privacy model for what is and isn't protected.
+        </p>
+      </footer>
+
+      <WalletModal isOpen={localShowModal} onClose={closeWalletModal} />
+    </div>
   )
 }
 
