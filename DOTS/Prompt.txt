@@ -1,0 +1,29 @@
+Create a high-fidelity UI mockup for a mobile turn-based multiplayer game called "Dots". The game should feel playful, sleek, and social, inspired by iMessage mini-games. Include the following design elements:
+
+1. Main Game Screen:
+- A 5x5 grid of bright, circular dots on a clean, minimalistic background.
+- Lines connecting dots as players draw them, with smooth animations.
+- Completed boxes highlighted with subtle, soft gradient fills (different colors for each player).
+- Small, friendly scoreboard showing each player's avatar, name, and current score.
+- Micro-interactions: glowing dot when hovered/tapped, small pop animation when a box is completed.
+
+2. Turn Indicator:
+- Clearly indicate whose turn it is with a banner or glowing effect around the current player’s avatar.
+- Optional: animated subtle hand pointer or sparkle on the dot they can select next.
+
+3. Last Move Highlight:
+- When opening the game, highlight the opponent’s last move with a brief animation or fade-in effect.
+
+4. Emoji Reactions:
+- Show small, animated emoji reactions floating above completed boxes.
+
+5. Color Palette:
+- Vibrant but friendly colors (avoid harsh contrasts). Examples: soft blues, pastel greens, warm yellows, coral accents.
+- Background minimal but visually pleasant (soft gradient or blurred abstract shapes).
+
+6. Overall Vibe:
+- Smooth, satisfying, playful animations
+- Clean, intuitive, easy-to-read layout
+- Mobile-first design with tap-friendly targets
+
+Deliver output as a full mobile screen mockup in portrait orientation, showing gameplay in action, including player avatars, scores, turn indicator, and at least one completed box.

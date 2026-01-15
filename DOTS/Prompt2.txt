@@ -1,0 +1,40 @@
+Generate a React functional component for a playable, hot-seat version of the game "Dots" with the following specifications:
+
+1. Game Mechanics:
+- 5x5 grid of dots displayed on a responsive canvas or div-based grid.
+- Players take turns drawing lines between two adjacent dots.
+- Lines cannot overlap and cannot connect non-adjacent dots.
+- When a player completes a 1x1 box (all 4 lines drawn), award the box to that player and give them an extra turn.
+- Keep track of scores for both players and display them prominently.
+- When all boxes are claimed, declare the winner.
+
+2. UI & Visuals:
+- Each dot should be a visually distinct circle, easy to tap/click.
+- Lines should animate smoothly when drawn.
+- Completed boxes should fill with a subtle gradient color unique to each player.
+- Display whose turn it is clearly.
+- Optional: small animation or highlight on the last move to make it visually satisfying.
+
+3. Interactivity:
+- Implement tap/click handling for line drawing.
+- Highlight dots or lines on hover to indicate valid moves.
+- Prevent invalid moves with proper feedback (e.g., ignore click or show subtle animation).
+
+4. State Management:
+- Use React hooks (useState, useEffect) to manage game state.
+- Represent the grid, drawn lines, completed boxes, current turn, and scores as part of the state.
+- The game should be fully playable in a single session (no backend needed for hot-seat version).
+
+5. Optional Enhancements:
+- Make it mobile-friendly (tap targets large enough, responsive layout).
+- Smooth animations when drawing lines or completing boxes.
+- Add a simple “Reset Game” button to start a new match.
+
+6. Code Style:
+- Write clean, readable React code with clear variable names.
+- Modularize components where appropriate (e.g., Dot, Line, Box, Scoreboard).
+- Include brief comments explaining key logic sections.
+
+The output should be a complete React component (or set of components) that can be directly rendered and played in a React app. Prioritize **gameplay first**, then visuals. Use modern React best practices.
+
+
