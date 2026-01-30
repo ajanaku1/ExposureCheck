@@ -1,18 +1,22 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { isValidSolanaAddress, getSolBalance } from './_lib/solanaService';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {
-    // Test basic Solana connection
-    const connection = new Connection('https://api.mainnet-beta.solana.com');
-    const testAddress = 'vines1vzrYbzLMRdu58or5GyzcJ96aqSRikB1PToNASq';
-    const pubkey = new PublicKey(testAddress);
-    const balance = await connection.getBalance(pubkey);
+    // Test importing from _lib
+    const testAddress = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+    const isValid = isValidSolanaAddress(testAddress);
+
+    if (!isValid) {
+      return res.status(400).json({ error: 'Invalid address' });
+    }
+
+    const balance = await getSolBalance(testAddress);
 
     return res.status(200).json({
-      message: 'Solana works!',
+      message: 'Import from _lib works!',
       address: testAddress,
-      balance: balance / 1e9,
+      balance,
     });
   } catch (error) {
     return res.status(500).json({
