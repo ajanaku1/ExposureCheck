@@ -4,6 +4,10 @@ import { RiskRadarChart } from './RiskRadarChart';
 import { NetworkGraph } from './NetworkGraph';
 import { SocialIdentityPanel } from './SocialIdentityPanel';
 import { ExposureCategory } from './ExposureCategory';
+import { ActivityHeatmap } from './ActivityHeatmap';
+import { FinancialInsights } from './FinancialInsights';
+import { SurveillancePlatforms } from './SurveillancePlatforms';
+import { EntityLabel } from './EntityLabel';
 
 interface AnalyticsDashboardProps {
   result: ExposureResult;
@@ -61,6 +65,11 @@ const Icons = {
       <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" />
     </svg>
   ),
+  externalLink: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="14" height="14">
+      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 };
 
 export function AnalyticsDashboard({ result, onReset }: AnalyticsDashboardProps) {
@@ -72,6 +81,20 @@ export function AnalyticsDashboard({ result, onReset }: AnalyticsDashboardProps)
     if (result.walletAge.ageInDays < 30) return `${result.walletAge.ageInDays}d`;
     if (result.walletAge.ageInDays < 365) return `${Math.floor(result.walletAge.ageInDays / 30)}mo`;
     return `${Math.floor(result.walletAge.ageInDays / 365)}y+`;
+  };
+
+  // Convert SOL balance to range for privacy
+  const getSolBalanceRange = () => {
+    const sol = result.solBalance;
+    if (sol < 0.1) return '<0.1';
+    if (sol < 1) return '0.1-1';
+    if (sol < 5) return '1-5';
+    if (sol < 10) return '5-10';
+    if (sol < 50) return '10-50';
+    if (sol < 100) return '50-100';
+    if (sol < 500) return '100-500';
+    if (sol < 1000) return '500-1K';
+    return '1K+';
   };
 
   const copyAddress = () => {
@@ -105,6 +128,15 @@ export function AnalyticsDashboard({ result, onReset }: AnalyticsDashboardProps)
                 <button className="copy-btn" onClick={copyAddress} title="Copy address">
                   {Icons.copy}
                 </button>
+                <a
+                  href={`https://solscan.io/account/${result.address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="explorer-link"
+                  title="View on Solscan"
+                >
+                  {Icons.externalLink}
+                </a>
               </div>
             </div>
           </div>
@@ -126,8 +158,8 @@ export function AnalyticsDashboard({ result, onReset }: AnalyticsDashboardProps)
             <div className="header-stat">
               <div className="stat-icon">{Icons.balance}</div>
               <div className="stat-content">
-                <span className="stat-value">{result.solBalance.toFixed(2)}</span>
-                <span className="stat-label">SOL Balance</span>
+                <span className="stat-value">{getSolBalanceRange()}</span>
+                <span className="stat-label">SOL Range</span>
               </div>
             </div>
             <div className="header-stat">
@@ -149,6 +181,9 @@ export function AnalyticsDashboard({ result, onReset }: AnalyticsDashboardProps)
           </button>
         </div>
       </header>
+
+      {/* Entity Label (Solscan Integration) */}
+      <EntityLabel solscanLabel={result.solscanLabel} address={result.address} />
 
       {/* Main Grid */}
       <div className="dashboard-grid">
@@ -173,98 +208,122 @@ export function AnalyticsDashboard({ result, onReset }: AnalyticsDashboardProps)
           />
         </div>
 
-        {/* Wallet Activity Stats - Right Column Bottom */}
+        {/* Activity Heatmap - Right Column Bottom */}
         <div className="grid-panel activity-panel">
-          <h3 className="panel-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="18" height="18">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Activity Metrics
-          </h3>
-          <div className="activity-stats">
-            <div className="activity-stat">
-              <div className="activity-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24">
-                  <path d="M7 17L17 7M17 7H8M17 7v9" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <div className="activity-info">
-                <span className="activity-value">{result.txCount.toLocaleString()}</span>
-                <span className="activity-label">Total TXs</span>
-              </div>
-            </div>
-            <div className="activity-stat">
-              <div className="activity-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 6v6l4 2" strokeLinecap="round" />
-                </svg>
-              </div>
-              <div className="activity-info">
-                <span className="activity-value">{result.walletAge.ageInDays || 0}d</span>
-                <span className="activity-label">Age</span>
-              </div>
-            </div>
-            <div className="activity-stat">
-              <div className="activity-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24">
-                  <circle cx="12" cy="12" r="8" />
-                  <circle cx="12" cy="12" r="4" />
-                  <circle cx="12" cy="12" r="1" fill="currentColor" />
-                </svg>
-              </div>
-              <div className="activity-info">
-                <span className="activity-value">{result.tokenCount}</span>
-                <span className="activity-label">Tokens</span>
-              </div>
-            </div>
-            <div className="activity-stat">
-              <div className="activity-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24">
-                  <ellipse cx="12" cy="12" rx="10" ry="4" />
-                  <ellipse cx="12" cy="8" rx="10" ry="4" />
-                  <ellipse cx="12" cy="4" rx="10" ry="4" />
-                </svg>
-              </div>
-              <div className="activity-info">
-                <span className="activity-value">{result.solBalance.toFixed(2)}</span>
-                <span className="activity-label">SOL</span>
-              </div>
-            </div>
-          </div>
-          <div className="activity-summary">
-            <div className="summary-item">
-              <span className="summary-label">Avg TX/Day</span>
-              <span className="summary-value">
-                {result.walletAge.ageInDays ? (result.txCount / result.walletAge.ageInDays).toFixed(1) : '—'}
-              </span>
-            </div>
-            <div className="summary-item">
-              <span className="summary-label">Unique Counterparties</span>
-              <span className="summary-value">{result.counterparties?.length || 0}</span>
-            </div>
-          </div>
+          <ActivityHeatmap timeAnalysis={result.timeOfDayAnalysis} />
         </div>
       </div>
 
-      {/* Signals Panel */}
-      <div className="signals-section">
-        <div className="section-header">
-          <h3 className="section-title">
+      {/* Financial Insights Section - only show if there's data */}
+      {((result.netWorth && result.netWorth.totalValueUsd != null) ||
+        (result.incomeAnalysis?.sources && result.incomeAnalysis.sources.length > 0) ||
+        (result.pnlAnalysis?.tokens && result.pnlAnalysis.tokens.length > 0)) && (
+        <div className="financial-section-wrapper">
+          <h3 className="section-title-standalone">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="20" height="20">
-              <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" />
-              <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Exposure Analysis
+            Financial Profile
           </h3>
-          <span className="section-badge">{result.categories.length} Categories</span>
+          <FinancialInsights
+            netWorth={result.netWorth}
+            incomeAnalysis={result.incomeAnalysis}
+            pnlAnalysis={result.pnlAnalysis}
+          />
         </div>
+      )}
+
+      {/* Risk Breakdown Panel */}
+      <div className="signals-section">
+        <h3 className="section-title-standalone warning">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="20" height="20">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" strokeLinecap="round" />
+            <line x1="12" y1="17" x2="12.01" y2="17" strokeLinecap="round" />
+          </svg>
+          Risk Breakdown
+        </h3>
         <div className="categories-grid">
           {result.categories.map((category) => (
             <ExposureCategory key={category.name} category={category} />
           ))}
         </div>
       </div>
+
+      {/* Privacy Recommendations */}
+      <div className="recommendations-section">
+        <h3 className="section-title-standalone green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="20" height="20">
+            <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          Reduce Your Exposure
+        </h3>
+        <div className="recommendations-grid">
+          <div className="recommendation-card">
+            <div className="rec-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0110 0v4" />
+              </svg>
+            </div>
+            <div className="rec-content">
+              <h4>Use Fresh Wallets</h4>
+              <p>Create new wallets for sensitive activities. Don't reuse wallets after privacy tool interactions.</p>
+            </div>
+          </div>
+          <div className="recommendation-card">
+            <div className="rec-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="rec-content">
+              <h4>Add Time Delays</h4>
+              <p>Wait hours or days between receiving and sending funds. Immediate movements are trivially linkable.</p>
+            </div>
+          </div>
+          <div className="recommendation-card">
+            <div className="rec-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24">
+                <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" />
+              </svg>
+            </div>
+            <div className="rec-content">
+              <h4>Use Privacy Tools</h4>
+              <p>Consider selective privacy solutions for sensitive transactions while maintaining compliance.</p>
+            </div>
+          </div>
+          <div className="recommendation-card">
+            <div className="rec-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24">
+                <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="8.5" cy="7" r="4" />
+                <line x1="18" y1="8" x2="23" y2="13" />
+                <line x1="23" y1="8" x2="18" y2="13" />
+              </svg>
+            </div>
+            <div className="rec-content">
+              <h4>Separate Identities</h4>
+              <p>Don't link social accounts to wallets with sensitive activity. Use separate wallets for public profiles.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Surveillance Platforms - Who's Watching */}
+      <SurveillancePlatforms
+        address={result.address}
+        solBalance={result.solBalance}
+        txCount={result.txCount}
+        hasSocialLinks={
+          !!(result.socialLinks.twitter ||
+             result.socialLinks.farcaster ||
+             result.socialLinks.lens ||
+             result.socialLinks.snsNames.length > 0)
+        }
+      />
 
       {/* Footer */}
       <footer className="dashboard-footer">

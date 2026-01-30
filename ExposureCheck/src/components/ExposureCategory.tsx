@@ -1,4 +1,5 @@
 import type { CategoryScore } from '../types/exposure';
+import { EducationalTooltip } from './EducationalTooltip';
 
 interface ExposureCategoryProps {
   category: CategoryScore;
@@ -38,6 +39,12 @@ const CategoryIcons: Record<string, JSX.Element> = {
       <path d="M12 6v12M8 10h8M8 14h8" strokeLinecap="round" />
     </svg>
   ),
+  'Privacy Hygiene': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="category-icon">
+      <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" />
+      <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 };
 
 // Default icon for unknown categories
@@ -74,25 +81,27 @@ export function ExposureCategory({ category }: ExposureCategoryProps) {
           </div>
           <h3 className="category-name">{category.name}</h3>
         </div>
-        <div className="category-score">
-          <span className="score-badge" style={{ backgroundColor: color, boxShadow: `0 0 12px ${glow}` }}>
-            {category.level}
-          </span>
-          <span className="score-value">{category.score}/100</span>
-        </div>
+        <span className="score-badge" style={{ backgroundColor: color, boxShadow: `0 0 12px ${glow}` }}>
+          {category.level}
+        </span>
       </div>
       <p className="category-description">{category.description}</p>
-      <div className="category-bar">
-        <div
-          className="category-bar-fill"
-          style={{ width: `${category.score}%`, backgroundColor: color, boxShadow: `0 0 8px ${glow}` }}
-        />
+      <div className="category-bar-section">
+        <div className="category-bar">
+          <div
+            className="category-bar-fill"
+            style={{ width: `${category.score}%`, backgroundColor: color, boxShadow: `0 0 8px ${glow}` }}
+          />
+        </div>
+        <span className="category-bar-value">{category.score}/100</span>
       </div>
       <ul className="category-signals">
         {category.signals.map((signal, index) => (
           <li key={index}>
             <span className="signal-indicator" style={{ backgroundColor: color, boxShadow: `0 0 6px ${glow}` }}></span>
-            <span className="signal-text">{signal}</span>
+            <EducationalTooltip signal={signal}>
+              <span className="signal-text">{signal}</span>
+            </EducationalTooltip>
           </li>
         ))}
       </ul>

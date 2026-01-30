@@ -6,6 +6,36 @@ function getRiskLevel(score: number): RiskLevel {
   return 'High';
 }
 
+// Convert exact amounts to privacy-preserving ranges
+function toValueRange(solAmount: number): string {
+  // Approximate SOL value in USD (rough estimate, could be fetched dynamically)
+  const estimatedUSD = solAmount * 100; // Rough estimate: 1 SOL ~ $100
+
+  if (estimatedUSD < 10) return '<$10';
+  if (estimatedUSD < 100) return '$10-$100';
+  if (estimatedUSD < 500) return '$100-$500';
+  if (estimatedUSD < 1000) return '$500-$1K';
+  if (estimatedUSD < 5000) return '$1K-$5K';
+  if (estimatedUSD < 10000) return '$5K-$10K';
+  if (estimatedUSD < 50000) return '$10K-$50K';
+  if (estimatedUSD < 100000) return '$50K-$100K';
+  if (estimatedUSD < 500000) return '$100K-$500K';
+  if (estimatedUSD < 1000000) return '$500K-$1M';
+  return '$1M+';
+}
+
+function toSolRange(solAmount: number): string {
+  if (solAmount < 0.1) return '<0.1 SOL';
+  if (solAmount < 1) return '0.1-1 SOL';
+  if (solAmount < 5) return '1-5 SOL';
+  if (solAmount < 10) return '5-10 SOL';
+  if (solAmount < 50) return '10-50 SOL';
+  if (solAmount < 100) return '50-100 SOL';
+  if (solAmount < 500) return '100-500 SOL';
+  if (solAmount < 1000) return '500-1K SOL';
+  return '1K+ SOL';
+}
+
 function clamp(value: number, min: number = 0, max: number = 100): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -71,7 +101,7 @@ export function calculateWalletActivityScore(data: WalletData): CategoryScore {
     name: 'Wallet Activity',
     score: clamp(score),
     level: getRiskLevel(clamp(score)),
-    weight: 0.2,
+    weight: 0.18,
     signals,
     description: 'Transaction frequency, wallet age, and token diversity create activity patterns',
   };
@@ -85,29 +115,63 @@ export function calculateAddressLinkabilityScore(data: WalletData): CategoryScor
   const estimatedCounterparties = Math.min(txCount, Math.floor(txCount * 0.7));
 
   if (estimatedCounterparties > 30) {
-    score += 45;
+    score += 35;
     signals.push(`Many unique interactions (~${estimatedCounterparties} addresses)`);
   } else if (estimatedCounterparties > 10) {
-    score += 30;
+    score += 25;
     signals.push(`Moderate address network (~${estimatedCounterparties} addresses)`);
   } else if (estimatedCounterparties > 0) {
     score += 15;
     signals.push(`Limited address connections`);
   }
 
+  // Funding source analysis
+  const funding = data.fundingAnalysis;
+  if (funding) {
+    // CEX funding is highly linkable (KYC required)
+    if (funding.hasCexFunding) {
+      score += 30;
+      signals.push('Funded from centralized exchange (KYC-linked)');
+    }
+
+    // Multiple funding sources increase linkability
+    if (funding.hasMultipleFundingSources) {
+      score += 15;
+      signals.push(`Multiple funding sources (${funding.sources.length} addresses)`);
+    }
+
+    // Show primary funding type
+    if (funding.primaryFundingType && funding.primaryFundingType !== 'wallet') {
+      const typeLabels: Record<string, string> = {
+        'cex': 'CEX',
+        'dex': 'DEX',
+        'nft': 'NFT marketplace',
+        'contract': 'Smart contract',
+      };
+      const label = typeLabels[funding.primaryFundingType] || funding.primaryFundingType;
+      signals.push(`Primary funding via ${label}`);
+    }
+
+    // Significant funding amount
+    if (funding.totalFundingReceived > 10) {
+      score += 10;
+      signals.push(`${funding.totalFundingReceived.toFixed(2)} SOL received from tracked sources`);
+    }
+  }
+
   if (data.tokenBalances.length > 5) {
-    score += 25;
+    score += 15;
     signals.push('Multiple token communities linked');
   } else if (data.tokenBalances.length > 0) {
-    score += 10;
+    score += 5;
     signals.push('Some token community exposure');
   }
 
   if (data.solBalance > 10) {
-    score += 20;
+    score += 10;
     signals.push('Significant SOL balance visible');
   } else if (data.solBalance > 1) {
-    score += 10;
+    score += 5;
     signals.push('Moderate SOL balance');
   }
 
@@ -115,7 +179,7 @@ export function calculateAddressLinkabilityScore(data: WalletData): CategoryScor
     name: 'Address Linkability',
     score: clamp(score),
     level: getRiskLevel(clamp(score)),
-    weight: 0.25,
+    weight: 0.22,
     signals,
     description: 'How easily this wallet can be linked to other addresses',
   };
@@ -250,20 +314,48 @@ export function calculateBehavioralProfilingScore(data: WalletData): CategorySco
   const signals: string[] = [];
   let score = 0;
 
-  const txWithTime = data.transactions.filter((tx) => tx.blockTime !== null && tx.blockTime !== undefined);
-  if (txWithTime.length > 10) {
-    const hours = txWithTime.map((tx) => new Date(tx.blockTime! * 1000).getUTCHours());
-    const uniqueHours = new Set(hours).size;
-
-    if (uniqueHours < 8) {
+  // Use detailed time-of-day analysis if available
+  const timeAnalysis = data.timeOfDayAnalysis;
+  if (timeAnalysis) {
+    // Activity concentration scoring
+    if (timeAnalysis.activityConcentration === 'high') {
       score += 35;
-      signals.push('Consistent timezone pattern detected');
-    } else if (uniqueHours < 16) {
+      signals.push('Highly concentrated activity pattern');
+    } else if (timeAnalysis.activityConcentration === 'medium') {
       score += 20;
-      signals.push('Some time-of-day patterns visible');
+      signals.push('Moderately concentrated activity pattern');
     } else {
       score += 10;
       signals.push('Varied transaction timing');
+    }
+
+    // Show specific active hours
+    if (timeAnalysis.activeHourRange && timeAnalysis.activeHourRange !== 'Insufficient data') {
+      signals.push(`Peak activity: ${timeAnalysis.activeHourRange}`);
+    }
+
+    // Show inferred timezone
+    if (timeAnalysis.inferredTimezone) {
+      score += 15;
+      signals.push(`Likely timezone: ${timeAnalysis.inferredTimezone}`);
+    }
+  } else {
+    // Fallback to basic analysis
+    const txWithTime = data.transactions.filter((tx) => tx.blockTime !== null && tx.blockTime !== undefined);
+    if (txWithTime.length > 10) {
+      const hours = txWithTime.map((tx) => new Date(tx.blockTime! * 1000).getUTCHours());
+      const uniqueHours = new Set(hours).size;
+
+      if (uniqueHours < 8) {
+        score += 35;
+        signals.push('Consistent timezone pattern detected');
+      } else if (uniqueHours < 16) {
+        score += 20;
+        signals.push('Some time-of-day patterns visible');
+      } else {
+        score += 10;
+        signals.push('Varied transaction timing');
+      }
     }
   }
 
@@ -291,9 +383,48 @@ export function calculateBehavioralProfilingScore(data: WalletData): CategorySco
       const stdDev = Math.sqrt(variance);
 
       if (stdDev < avgInterval * 0.5) {
-        score += 25;
-        signals.push('Regular transaction pattern detected');
+        score += 15;
+        signals.push('Regular transaction interval pattern');
       }
+    }
+  }
+
+  // Transaction velocity analysis
+  const velocity = data.transactionVelocity;
+  if (velocity) {
+    // Activity level
+    if (velocity.recentActivityLevel === 'high') {
+      score += 15;
+      signals.push(`High recent activity (${velocity.avgTxPerDay.toFixed(1)} tx/day avg)`);
+    } else if (velocity.recentActivityLevel === 'medium') {
+      score += 10;
+      signals.push(`Moderate activity (${velocity.avgTxPerDay.toFixed(1)} tx/day avg)`);
+    } else if (velocity.recentActivityLevel === 'dormant') {
+      signals.push('Dormant wallet (no recent activity)');
+    }
+
+    // Activity trend
+    if (velocity.activityTrend === 'increasing') {
+      score += 10;
+      signals.push('Increasing activity trend');
+    } else if (velocity.activityTrend === 'decreasing') {
+      signals.push('Decreasing activity trend');
+    }
+
+    // Bursty behavior is more fingerprintable
+    if (velocity.burstyBehavior) {
+      score += 15;
+      signals.push('Bursty transaction pattern (clustered activity)');
+    }
+
+    // Peak activity period
+    if (velocity.peakActivityPeriod) {
+      signals.push(`Peak: ${velocity.peakActivityPeriod}`);
+    }
+
+    // Long gaps can indicate specific usage patterns
+    if (velocity.longestGapDays && velocity.longestGapDays > 30) {
+      signals.push(`Longest inactivity: ${velocity.longestGapDays} days`);
     }
   }
 
@@ -301,7 +432,7 @@ export function calculateBehavioralProfilingScore(data: WalletData): CategorySco
     name: 'Behavioral Profiling',
     score: clamp(score),
     level: getRiskLevel(clamp(score)),
-    weight: 0.2,
+    weight: 0.17,
     signals,
     description: 'Timing patterns and protocol usage that create behavioral fingerprints',
   };
@@ -311,34 +442,73 @@ export function calculateFinancialFootprintScore(data: WalletData): CategoryScor
   const signals: string[] = [];
   let score = 0;
 
+  // Use ranges instead of exact values for privacy
+  const solRange = toSolRange(data.solBalance);
+  const valueRange = toValueRange(data.solBalance);
+
   if (data.solBalance > 100) {
-    score += 40;
-    signals.push(`Large SOL holdings (${data.solBalance.toFixed(2)} SOL)`);
+    score += 35;
+    signals.push(`Large holdings (${solRange}, est. ${valueRange})`);
   } else if (data.solBalance > 10) {
-    score += 25;
-    signals.push(`Moderate SOL holdings (${data.solBalance.toFixed(2)} SOL)`);
+    score += 20;
+    signals.push(`Moderate holdings (${solRange}, est. ${valueRange})`);
   } else if (data.solBalance > 1) {
-    score += 15;
-    signals.push(`Small SOL holdings (${data.solBalance.toFixed(2)} SOL)`);
+    score += 10;
+    signals.push(`Small holdings (${solRange}, est. ${valueRange})`);
   } else {
-    signals.push(`Minimal SOL balance`);
+    signals.push(`Minimal balance (${solRange})`);
   }
 
-  const totalTokens = data.tokenBalances.reduce((sum, t) => sum + t.uiAmount, 0);
-  if (totalTokens > 10000) {
-    score += 30;
-    signals.push('Large token positions visible');
-  } else if (totalTokens > 100) {
-    score += 15;
-    signals.push('Moderate token positions');
+  // Token risk analysis
+  const tokenRisk = data.tokenRiskAnalysis;
+  if (tokenRisk) {
+    // Show risk profile
+    const profileLabels = {
+      conservative: 'Conservative (mostly stablecoins)',
+      balanced: 'Balanced portfolio',
+      aggressive: 'Aggressive (volatile assets)',
+      speculative: 'Speculative (memecoins detected)',
+    };
+    signals.push(`Token profile: ${profileLabels[tokenRisk.riskProfile]}`);
+
+    // Score based on token composition
+    if (tokenRisk.stablecoinCount > 0) {
+      score += 10;
+      signals.push(`${tokenRisk.stablecoinCount} stablecoin(s) held`);
+    }
+
+    if (tokenRisk.bluechipCount > 0) {
+      score += 15;
+      signals.push(`${tokenRisk.bluechipCount} blue-chip token(s)`);
+    }
+
+    if (tokenRisk.memecoinCount > 0) {
+      score += 20;
+      signals.push(`${tokenRisk.memecoinCount} potential memecoin(s) detected`);
+    }
+
+    if (tokenRisk.volatileCount > 5) {
+      score += 15;
+      signals.push('Diverse volatile token exposure');
+    }
+  } else {
+    // Fallback to basic token analysis
+    const totalTokens = data.tokenBalances.reduce((sum, t) => sum + t.uiAmount, 0);
+    if (totalTokens > 10000) {
+      score += 25;
+      signals.push('Large token positions visible');
+    } else if (totalTokens > 100) {
+      score += 15;
+      signals.push('Moderate token positions');
+    }
   }
 
   const txCount = data.transactions.length;
   if (txCount > 50) {
-    score += 25;
+    score += 20;
     signals.push('High transaction volume trackable');
   } else if (txCount > 20) {
-    score += 15;
+    score += 10;
     signals.push('Moderate financial activity');
   }
 
@@ -346,9 +516,89 @@ export function calculateFinancialFootprintScore(data: WalletData): CategoryScor
     name: 'Financial Footprint',
     score: clamp(score),
     level: getRiskLevel(clamp(score)),
-    weight: 0.2,
+    weight: 0.18,
     signals,
     description: 'Value held and transaction volumes reveal financial profile',
+  };
+}
+
+export function calculatePrivacyHygieneScore(data: WalletData): CategoryScore {
+  const signals: string[] = [];
+  let score = 0;
+
+  const privacy = data.privacyHygiene;
+
+  // No privacy data available - neutral score
+  if (!privacy) {
+    signals.push('Privacy behavior analysis pending');
+    return {
+      name: 'Privacy Hygiene',
+      score: 30,
+      level: 'Low',
+      weight: 0.10,
+      signals,
+      description: 'Privacy tool usage and transaction patterns affecting anonymity',
+    };
+  }
+
+  // Privacy protocol interactions detected
+  if (privacy.hasPrivacyAttempts) {
+    if (privacy.immediateReuseAfterPrivacy) {
+      // Privacy attempt but immediately reused - high linkability
+      score += 45;
+      signals.push('Privacy attempt detected but wallet reused immediately');
+      signals.push('Immediate reuse negates privacy benefits');
+    } else {
+      // Privacy attempt with proper delays - lower linkability exposure
+      score += 20;
+      signals.push(`Privacy protocol interactions: ${privacy.privacyProgramInteractions}`);
+      signals.push('Some privacy awareness detected');
+    }
+  }
+
+  // Analyze time delays
+  if (privacy.avgTimeDelayAfterReceive !== null) {
+    if (privacy.avgTimeDelayAfterReceive < 60) {
+      score += 35;
+      signals.push('Funds moved within 1 minute of receiving');
+    } else if (privacy.avgTimeDelayAfterReceive < 300) {
+      score += 25;
+      signals.push('Funds typically moved within 5 minutes');
+    } else if (privacy.avgTimeDelayAfterReceive < 3600) {
+      score += 15;
+      signals.push('Some delay between receiving and sending');
+    } else {
+      score += 5;
+      signals.push('Good timing separation between transactions');
+    }
+  }
+
+  // Consistent amounts are bad for privacy
+  if (privacy.hasConsistentAmounts) {
+    score += 30;
+    signals.push('Repeated transaction amounts create linkability');
+  }
+
+  // Add any additional risk signals from analysis
+  for (const signal of privacy.riskSignals) {
+    if (!signals.includes(signal)) {
+      signals.push(signal);
+    }
+  }
+
+  // No privacy issues detected
+  if (signals.length === 0 || score === 0) {
+    signals.push('No obvious privacy concerns detected');
+    score = 15;
+  }
+
+  return {
+    name: 'Privacy Hygiene',
+    score: clamp(score),
+    level: getRiskLevel(clamp(score)),
+    weight: 0.10,
+    signals,
+    description: 'Privacy tool usage and transaction patterns affecting anonymity',
   };
 }
 

@@ -26,7 +26,7 @@ export function RiskGauge({ score, level }: RiskGaugeProps) {
   const needleAngle = startAngle - (progress * 180);
   const needleLength = radius - 12;
   const needleX = centerX + needleLength * Math.cos((needleAngle * Math.PI) / 180);
-  const needleY = centerY + needleLength * Math.sin((needleAngle * Math.PI) / 180);
+  const needleY = centerY - needleLength * Math.sin((needleAngle * Math.PI) / 180);
 
   // Color based on risk level
   const getColor = () => {

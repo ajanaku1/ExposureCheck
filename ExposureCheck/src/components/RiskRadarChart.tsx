@@ -94,6 +94,7 @@ function shortenCategoryName(name: string): string {
     'Social Exposure': 'Social',
     'Behavioral Profiling': 'Behavioral',
     'Financial Footprint': 'Financial',
+    'Privacy Hygiene': 'Privacy',
   };
   return mapping[name] || name;
 }
