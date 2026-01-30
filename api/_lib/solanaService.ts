@@ -1,5 +1,5 @@
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import type { TransactionData, TokenBalance, CounterpartyData, CounterpartyType, FundingSource, FundingAnalysis, TimeOfDayAnalysis, TokenRiskAnalysis, TokenClassification, TokenRiskCategory, TransactionVelocity, SolscanLabel } from './types';
+import type { TransactionData, TokenBalance, CounterpartyData, CounterpartyType, FundingSource, FundingAnalysis, TimeOfDayAnalysis, TokenRiskAnalysis, TokenClassification, TokenRiskCategory, TransactionVelocity, SolscanLabel } from './types.js';
 
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 
@@ -1157,7 +1157,7 @@ export function analyzeTransactionVelocity(transactions: TransactionData[], wall
 // INCOME SOURCE ANALYSIS
 // ============================================
 
-import type { IncomeAnalysis, IncomeSourceType, NetWorthAnalysis, PnLAnalysis, TokenPnL, TokenTrade } from './types';
+import type { IncomeAnalysis, IncomeSourceType, NetWorthAnalysis, PnLAnalysis, TokenPnL, TokenTrade } from './types.js';
 
 // Known airdrop/claim programs
 const AIRDROP_PROGRAMS = new Set([

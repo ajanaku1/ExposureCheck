@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { isValidSolanaAddress, getSolBalance } from './_lib/solanaService';
+import { isValidSolanaAddress, getSolBalance } from './_lib/solanaService.js';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {

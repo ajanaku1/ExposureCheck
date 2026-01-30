@@ -1,4 +1,4 @@
-import type { WalletData, ExposureResult, RiskLevel } from './types';
+import type { WalletData, ExposureResult, RiskLevel } from './types.js';
 import {
   getSolBalance,
   getTransactionHistory,
@@ -15,7 +15,7 @@ import {
   analyzeNetWorth,
   analyzePnL,
   getSolscanLabel,
-} from './solanaService';
+} from './solanaService.js';
 import {
   calculateWalletActivityScore,
   calculateAddressLinkabilityScore,
@@ -24,7 +24,7 @@ import {
   calculateFinancialFootprintScore,
   calculatePrivacyHygieneScore,
   calculateOverallScore,
-} from './scoringService';
+} from './scoringService.js';
 
 function getRiskLevel(score: number): RiskLevel {
   if (score < 40) return 'Low';

@@ -1,4 +1,4 @@
-import type { WalletData, CategoryScore, RiskLevel } from './types';
+import type { WalletData, CategoryScore, RiskLevel } from './types.js';
 
 function getRiskLevel(score: number): RiskLevel {
   if (score < 40) return 'Low';
