@@ -584,7 +584,6 @@ export async function analyzePrivacyHygiene(
   transactions: TransactionData[]
 ): Promise<PrivacyHygieneData> {
   const conn = getConnection();
-  const pubkey = new PublicKey(address);
   const result: PrivacyHygieneData = {
     privacyProgramInteractions: 0,
     hasPrivacyAttempts: false,
@@ -1158,7 +1157,7 @@ export function analyzeTransactionVelocity(transactions: TransactionData[], wall
 // INCOME SOURCE ANALYSIS
 // ============================================
 
-import type { IncomeAnalysis, IncomeSource, IncomeSourceType, NetWorthAnalysis, TokenValue, PnLAnalysis, TokenPnL, TokenTrade } from './types';
+import type { IncomeAnalysis, IncomeSourceType, NetWorthAnalysis, PnLAnalysis, TokenPnL, TokenTrade } from './types';
 
 // Known airdrop/claim programs
 const AIRDROP_PROGRAMS = new Set([

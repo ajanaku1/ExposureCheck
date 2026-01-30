@@ -3,7 +3,7 @@ import { isValidSolanaAddress } from '../../lib/solanaService';
 import { analyzeWallet } from '../../lib/analysisService';
 
 // Simple in-memory cache (resets on cold start)
-const cache = new Map<string, { result: unknown; timestamp: number }>();
+const cache = new Map<string, { result: Record<string, unknown>; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
