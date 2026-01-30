@@ -1,6 +1,7 @@
 import type { ExposureResult, AnalysisProgress } from '../types/exposure';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// In production, use relative path (same domain). In dev, use local server.
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export async function analyzeWalletViaApi(
   address: string,
