@@ -165,7 +165,7 @@ function Header() {
       <Link to="/" className="brand">
         <ShieldIcon />
         <div className="brand-text">
-          <h1>ExposureCheck</h1>
+          <h1>Trace</h1>
           <p className="tagline">Privacy Intelligence Protocol</p>
         </div>
       </Link>
@@ -197,7 +197,7 @@ function Footer() {
       <div className="footer-content">
         <div className="footer-brand">
           <ShieldIcon />
-          <span>ExposureCheck</span>
+          <span>Trace</span>
         </div>
         <p>Privacy-first wallet analysis. Your data is processed securely and cached temporarily.</p>
         <div className="footer-links">

@@ -37,7 +37,7 @@ app.use('/api/health', healthRoutes);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`ExposureCheck API running on http://localhost:${PORT}`);
+  console.log(`Trace API running on http://localhost:${PORT}`);
   console.log(`  - Health: http://localhost:${PORT}/api/health`);
   console.log(`  - Analyze: http://localhost:${PORT}/api/analyze/:address`);
 });
