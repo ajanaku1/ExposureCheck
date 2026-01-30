@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type { ExposureResult } from '../../lib/types';
-import { isValidSolanaAddress } from '../../lib/solanaService';
-import { analyzeWallet } from '../../lib/analysisService';
+import type { ExposureResult } from '../_lib/types';
+import { isValidSolanaAddress } from '../_lib/solanaService';
+import { analyzeWallet } from '../_lib/analysisService';
 
 // Simple in-memory cache (resets on cold start)
 const cache = new Map<string, { result: ExposureResult; timestamp: number }>();
