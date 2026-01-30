@@ -2,15 +2,18 @@ import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import type { TransactionData, TokenBalance, CounterpartyData, CounterpartyType, FundingSource, FundingAnalysis, TimeOfDayAnalysis, TokenRiskAnalysis, TokenClassification, TokenRiskCategory, TransactionVelocity, SolscanLabel } from './types.js';
 
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
+const QUICKNODE_RPC = process.env.QUICKNODE_RPC_URL;
 
 // RPC endpoints in order of preference
 const RPC_ENDPOINTS = HELIUS_API_KEY
   ? [`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`]
+  : QUICKNODE_RPC
+  ? [QUICKNODE_RPC]
   : [
-      'https://solana-mainnet.g.alchemy.com/v2/demo', // Alchemy demo
+      'https://api.mainnet-beta.solana.com', // Official Solana RPC (most reliable from serverless)
       'https://rpc.ankr.com/solana', // Ankr free tier
-      'https://solana.public-rpc.com', // Public RPC
-      'https://api.mainnet-beta.solana.com', // Official (rate limited)
+      'https://solana-mainnet.rpc.extrnode.com', // Extrnode public
+      'https://mainnet.rpcpool.com', // RPCPool public
     ];
 
 let connection: Connection | null = null;
@@ -20,7 +23,21 @@ function getConnection(): Connection {
   if (!connection) {
     connection = new Connection(RPC_ENDPOINTS[currentRpcIndex], {
       commitment: 'confirmed',
-      confirmTransactionInitialTimeout: 30000,
+      confirmTransactionInitialTimeout: 60000,
+      fetch: async (url, options) => {
+        // Custom fetch with timeout for serverless environments
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
+        try {
+          const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+          });
+          return response;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      },
     });
   }
   return connection;
@@ -29,18 +46,15 @@ function getConnection(): Connection {
 // Rotate to next RPC if current one fails
 function rotateRpc(): void {
   currentRpcIndex = (currentRpcIndex + 1) % RPC_ENDPOINTS.length;
-  connection = new Connection(RPC_ENDPOINTS[currentRpcIndex], {
-    commitment: 'confirmed',
-    confirmTransactionInitialTimeout: 30000,
-  });
-  console.log(`Switched to RPC: ${RPC_ENDPOINTS[currentRpcIndex].split('?')[0]}`);
+  connection = null; // Reset connection to use new RPC
+  console.log(`Switching to RPC: ${RPC_ENDPOINTS[currentRpcIndex].split('?')[0]}`);
 }
 
 // Retry helper with RPC rotation
 async function withRetry<T>(
   operation: () => Promise<T>,
-  maxRetries: number = 3,
-  delayMs: number = 1000
+  maxRetries: number = 4,
+  delayMs: number = 2000
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -49,11 +63,13 @@ async function withRetry<T>(
       return await operation();
     } catch (error) {
       lastError = error as Error;
-      console.error(`RPC attempt ${attempt + 1} failed:`, (error as Error).message);
+      console.error(`RPC attempt ${attempt + 1}/${maxRetries} failed:`, (error as Error).message);
 
       if (attempt < maxRetries - 1) {
         rotateRpc();
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        // Exponential backoff
+        const backoffDelay = delayMs * Math.pow(1.5, attempt);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
       }
     }
   }
